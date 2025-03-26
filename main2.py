@@ -21,7 +21,6 @@ def home():
 
 @app.route('/recommend', methods=['POST'])
 def recommend():
-    """Fetches recommendations for an existing company."""
     data = request.get_json()
     
     if "companyProfile" not in data:
@@ -33,7 +32,6 @@ def recommend():
 
 
 def compute_recommendations(company_data):
-    """Computes recommendations and returns full company details, including _id."""
     user_keywords = set(company_data.get("businessKeywords", []))
     user_vector = np.array(company_data.get("vector") or model.encode(company_data.get("companyProfile", "")).tolist())
 
