@@ -7,7 +7,7 @@ from bson import ObjectId
 app = Flask(__name__)
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# MongoDB Setup
+
 client = MongoClient('mongodb+srv://websupport:RQHkN9PJJZ4uCHDP@cluster0.k0hjp.mongodb.net/bwebevents')
 db = client['bwebevents']
 collection = db['exhibitorparticipants']
@@ -62,7 +62,7 @@ def compute_recommendations(company_data):
         recommendations.append({"score": score, **company})
 
     recommendations.sort(key=lambda x: x["score"], reverse=True)
-    return recommendations[:5]  # Return top 5 recommendations
+    return recommendations[:5]  
 
 
 
