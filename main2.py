@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from sentence_transformers import SentenceTransformer, util
 from pymongo import MongoClient
-from celery import Celery
 import numpy as np
 from bson import ObjectId
 
@@ -13,40 +12,11 @@ client = MongoClient('mongodb+srv://websupport:RQHkN9PJJZ4uCHDP@cluster0.k0hjp.m
 db = client['bwebevents']
 collection = db['exhibitorparticipants']
 
-# Celery Configuration (for async processing)
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
-celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-celery.conf.update(app.config)
-
 
 @app.route('/', methods=['GET'])
 def home():
     return "Company Recommendation System is Running 🚀"
 
-
-@app.route('/register', methods=['POST'])
-def register():
-    """Registers a new company and asynchronously updates recommendations."""
-    data = request.get_json()
-    
-    if not data or "companyName" not in data or "companyProfile" not in data:
-        return jsonify({"error": "companyName and companyProfile are required"}), 400
-
-    # Generate and store vector
-    company_vector = model.encode(data["companyProfile"]).tolist()
-    data["vector"] = company_vector
-
-    # Insert into MongoDB
-    collection.insert_one(data)
-
-    # Run recommendation update in the background
-    update_recommendations_task.delay(data["companyName"])
-
-    return jsonify({
-        "message": "Company registered successfully!",
-        "recommendations": compute_recommendations(data)
-    }), 201
 
 
 @app.route('/recommend', methods=['POST'])
@@ -96,23 +66,6 @@ def compute_recommendations(company_data):
     recommendations.sort(key=lambda x: x["score"], reverse=True)
     return recommendations[:5]  # Return top 5 recommendations
 
-
-@celery.task
-def update_recommendations_task(new_company_name):
-    """Updates recommendations for all registered companies asynchronously."""
-    new_company = collection.find_one({"companyName": new_company_name})
-    
-    if not new_company:
-        return
-
-    all_companies = list(collection.find({"companyName": {"$ne": new_company_name}}))
-
-    for company in all_companies:
-        recommendations = compute_recommendations(company)
-        collection.update_one(
-            {"companyName": company["companyName"]},
-            {"$set": {"recommendations": recommendations}}
-        )
 
 
 if __name__ == '__main__':
