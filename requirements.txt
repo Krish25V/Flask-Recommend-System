@@ -4,4 +4,3 @@ pymongo[srv]==4.5.0
 celery==5.3.4
 numpy==1.25.2
 bson==0.5.10
-redis==5.0.10
